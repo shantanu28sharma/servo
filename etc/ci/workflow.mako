@@ -31,8 +31,6 @@ jobs:
           python mach fetch
       - name: Release build
         run: python mach build --release --media-stack=dummy
-        env:
-          PYTHON3: python
       - name: Unit tests
         run: python mach test-unit
       - name: Smoketest
