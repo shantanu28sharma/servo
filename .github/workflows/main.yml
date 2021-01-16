@@ -26,13 +26,13 @@ jobs:
         with:
           fetch-depth: 2
       - name: Bootstrap
-        run: python3 mach fetch
+        run: python mach fetch
       - name: Release build
-        run: python3 ./mach build --release --media-stack=dummy
+        run: python mach build --release --media-stack=dummy
       - name: Unit tests
-        run: python3 ./mach test-unit
+        run: python mach test-unit
       - name: Smoketest
-        run: python3 ./mach smoketest --angle
+        run: python mach smoketest --angle
 
   # build-mac:
   #   name: Build (macOS)
