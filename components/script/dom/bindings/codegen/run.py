@@ -17,8 +17,8 @@ def main():
     config_file = "Bindings.conf"
 
     import WebIDL
-    from Configuration import Configuration
-    from CodegenRust import CGBindingRoot
+    from .Configuration import Configuration
+    from .CodegenRust import CGBindingRoot
 
     parser = WebIDL.Parser(make_dir(os.path.join(out_dir, "cache")))
     webidls = [name for name in os.listdir(webidls_dir) if name.endswith(".webidl")]
