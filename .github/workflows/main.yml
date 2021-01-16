@@ -26,7 +26,9 @@ jobs:
         with:
           fetch-depth: 2
       - name: Bootstrap
-        run: python mach fetch
+        run: |
+          python -m pip install --upgrade pip virtualenv
+          python mach fetch
       - name: Release build
         run: python mach build --release --media-stack=dummy
       - name: Unit tests
