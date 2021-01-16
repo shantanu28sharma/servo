@@ -652,8 +652,8 @@ class MachCommands(CommandBase):
                 print((key, env[key]))
 
         if sys.platform == "win32":
-            env.setdefault("CC", "clang-cl.exe")
-            env.setdefault("CXX", "clang-cl.exe")
+            #env.setdefault("CC", "clang-cl.exe")
+            #env.setdefault("CXX", "clang-cl.exe")
             if uwp:
                 env.setdefault("TARGET_CFLAGS", "")
                 env.setdefault("TARGET_CXXFLAGS", "")
