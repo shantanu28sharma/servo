@@ -9,7 +9,8 @@ import json
 
 def main():
     os.chdir(os.path.join(os.path.dirname(__file__)))
-    sys.path[0:0] = ["./parser", "./ply", os.path.dirname(os.path.abspath(__file__))]
+    sys.path[0:0] = ["./parser", "./ply"]
+    print(sys.path)
 
     css_properties_json, out_dir = sys.argv[1:]
     doc_servo = "../../../../../target/doc/servo"
