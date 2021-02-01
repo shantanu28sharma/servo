@@ -16,13 +16,14 @@ use crate::dom::bindings::str::DOMString;
 use crate::dom::bindings::trace::trace_object;
 use crate::dom::windowproxy;
 use crate::script_runtime::JSContext as SafeJSContext;
-use js::conversions::{jsstr_to_string, ToJSValConvertible};
+use js::conversions::{ToJSValConvertible};
 use js::glue::{CallJitGetterOp, CallJitMethodOp, CallJitSetterOp, IsWrapper};
 use js::glue::{GetCrossCompartmentWrapper, JS_GetReservedSlot, WrapperNew};
 use js::glue::{UnwrapObjectDynamic, UnwrapObjectStatic, RUST_JSID_TO_INT, RUST_JSID_TO_STRING};
 use js::glue::{
     RUST_FUNCTION_VALUE_TO_JITINFO, RUST_JSID_IS_INT, RUST_JSID_IS_STRING, RUST_JSID_IS_VOID,
 };
+use js::jsapi::{AtomToLinearString, GetLinearStringLength, GetLinearStringCharAt};
 use js::jsapi::HandleId as RawHandleId;
 use js::jsapi::HandleObject as RawHandleObject;
 use js::jsapi::MutableHandleIdVector as RawMutableHandleIdVector;
@@ -31,10 +32,9 @@ use js::jsapi::{CallArgs, DOMCallbacks, GetNonCCWObjectGlobal};
 use js::jsapi::{Heap, JSAutoRealm, JSContext, JS_FreezeObject};
 use js::jsapi::{JSJitInfo, JSObject, JSTracer, JSWrapObjectCallbacks};
 use js::jsapi::{JS_EnumerateStandardClasses, JS_GetLatin1StringCharsAndLength};
-use js::jsapi::{JS_IsExceptionPending, JS_IsGlobalObject};
+use js::jsapi::{JS_IsExceptionPending, JS_IsGlobalObject, JSAtom};
 use js::jsapi::{
-    JS_ResolveStandardClass, JS_StringHasLatin1Chars, ObjectOpResult, StringIsArrayIndex1,
-    StringIsArrayIndex2,
+    JS_ResolveStandardClass, JS_DeprecatedStringHasLatin1Chars, ObjectOpResult, StringIsArrayIndex,
 };
 use js::jsval::{JSVal, UndefinedValue};
 use js::rust::wrappers::JS_DeletePropertyById;
@@ -191,7 +191,7 @@ pub unsafe fn get_property_on_prototype(
 
 /// Get an array index from the given `jsid`. Returns `None` if the given
 /// `jsid` is not an integer.
-pub unsafe fn get_array_index_from_id(cx: *mut JSContext, id: HandleId) -> Option<u32> {
+pub unsafe fn get_array_index_from_id(_cx: *mut JSContext, id: HandleId) -> Option<u32> {
     let raw_id = id.into();
     if RUST_JSID_IS_INT(raw_id) {
         return Some(RUST_JSID_TO_INT(raw_id) as u32);
@@ -201,7 +201,26 @@ pub unsafe fn get_array_index_from_id(cx: *mut JSContext, id: HandleId) -> Optio
         return None;
     }
 
-    let s = jsstr_to_string(cx, RUST_JSID_TO_STRING(raw_id));
+    let atom = RUST_JSID_TO_STRING(raw_id) as *mut JSAtom;
+    let s = AtomToLinearString(atom);
+    if GetLinearStringLength(s) == 0 {
+        return None;
+    }
+
+    let chars = [GetLinearStringCharAt(s, 0)];
+    let first_char = char::decode_utf16(chars.iter().cloned()).next().map_or('\0', |r| r.unwrap_or('\0'));
+    if first_char < 'a' || first_char > 'z' {
+        return None;
+    }
+
+    let mut i = 0;
+    if StringIsArrayIndex(s, &mut i) {
+        Some(i)
+    } else {
+        None
+    }
+
+    /*let s = jsstr_to_string(cx, RUST_JSID_TO_STRING(raw_id));
     if s.len() == 0 {
         return None;
     }
@@ -225,7 +244,7 @@ pub unsafe fn get_array_index_from_id(cx: *mut JSContext, id: HandleId) -> Optio
         Some(i)
     } else {
         None
-    }
+    }*/
 }
 
 /// Find the enum equivelent of a string given by `v` in `pairs`.
@@ -436,7 +455,7 @@ pub unsafe extern "C" fn resolve_global(
     }
 
     let string = RUST_JSID_TO_STRING(id);
-    if !JS_StringHasLatin1Chars(string) {
+    if !JS_DeprecatedStringHasLatin1Chars(string) {
         *rval = false;
         return true;
     }
